@@ -618,7 +618,6 @@ class xbmcnfotv(Agent.TV_Shows):
 							newrole.role = role
 						rroles.append (newrole.role)
 					except:
-						newrole.role = 'Unknown Role ' + str(n)
 						pass
 					newrole.photo = ''
 					athumbloc = Prefs['athumblocation']
