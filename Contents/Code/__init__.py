@@ -111,13 +111,20 @@ class xbmcnfotv(Agent.TV_Shows):
 	# @param parts Parts of multi-episode.
 	# @return void
 
-	def AssetsLocal(self, metadata, paths, type, parts=[], multEpisode=False):
+	def AssetsLocal(self, metadata, mainPath, type, parts=[], multEpisode=False, seasonPath=None):
 		pathFiles = {}
 		audioExts = ['mp3', 'm4a']
 		imageExts = ['jpg', 'png', 'jpeg', 'tbn']
 		rootFile = os.path.splitext(os.path.basename(parts[0].file.encode("utf-8")))[0] if parts else None
 
-		for path in paths:
+		rootPaths = [mainPath]
+		if seasonPath:
+			if Prefs['seasonassetsinseasonfolder']:
+				rootPaths = [seasonPath]
+			else:
+				rootPaths.append(seasonPath)
+
+		for path in rootPaths:
 			path = path.encode("utf-8")
 			for filePath in sorted(os.listdir(path)):
 				if filePath.endswith(tuple(imageExts + audioExts)):
@@ -134,13 +141,18 @@ class xbmcnfotv(Agent.TV_Shows):
 			searchTuples.append(['(fanart|art|background|backdrop)-?[0-9]?[0-9]?', metadata.art, imageExts])
 			searchTuples.append(['theme-?[0-9]?[0-9]?', metadata.themes, audioExts])
 		elif type == 'season':
-			searchTuples.append(['season-?0?%s(-poster)?-?[0-9]?[0-9]?' % metadata.index, metadata.posters, imageExts])
-			searchTuples.append(['season-?0?%s-banner-?[0-9]?[0-9]?' % metadata.index, metadata.banners, imageExts])
-			searchTuples.append(['season-?0?%s-(fanart|art|background|backdrop)-?[0-9]?[0-9]?' % metadata.index, metadata.art, imageExts])
-			if int(metadata.index) == 0:
-				searchTuples.append(['season-specials-poster-?[0-9]?[0-9]?', metadata.posters, imageExts])
-				searchTuples.append(['season-specials-banner-?[0-9]?[0-9]?', metadata.banners, imageExts])
-				searchTuples.append(['season-specials-(fanart|art|background|backdrop)-?[0-9]?[0-9]?', metadata.art, imageExts])
+			if Prefs['seasonassetsinseasonfolder']:
+				searchTuples.append(['(season|poster|folder)-?[0-9]?[0-9]?', metadata.posters, imageExts])
+				searchTuples.append(['banner-?[0-9]?[0-9]?', metadata.banners, imageExts])
+				searchTuples.append(['(fanart|art|background|backdrop)-?[0-9]?[0-9]?', metadata.art, imageExts])
+			else:
+				searchTuples.append(['season-?0?%s(-poster)?-?[0-9]?[0-9]?' % metadata.index, metadata.posters, imageExts])
+				searchTuples.append(['season-?0?%s-banner-?[0-9]?[0-9]?' % metadata.index, metadata.banners, imageExts])
+				searchTuples.append(['season-?0?%s-(fanart|art|background|backdrop)-?[0-9]?[0-9]?' % metadata.index, metadata.art, imageExts])
+				if int(metadata.index) == 0:
+					searchTuples.append(['season-specials-poster-?[0-9]?[0-9]?', metadata.posters, imageExts])
+					searchTuples.append(['season-specials-banner-?[0-9]?[0-9]?', metadata.banners, imageExts])
+					searchTuples.append(['season-specials-(fanart|art|background|backdrop)-?[0-9]?[0-9]?', metadata.art, imageExts])
 		elif type == 'episode':
 			searchTuples.append([re.escape(rootFile) + '(-|-thumb)?-?[0-9]?[0-9]?', metadata.thumbs, imageExts])
 
@@ -600,7 +612,7 @@ class xbmcnfotv(Agent.TV_Shows):
 				if not Prefs['localmediaagent']:
 					if Prefs['assetslocation'] == 'local':
 						Log("Looking for show assets for %s from local", metadata.title)
-						try: self.AssetsLocal(metadata, [path], 'show')
+						try: self.AssetsLocal(metadata, path, 'show')
 						except Exception, e:
 							Log('Error finding show assets for %s from local: %s', metadata.title, str(e))
 					else:
@@ -752,7 +764,7 @@ class xbmcnfotv(Agent.TV_Shows):
 					if not Prefs['localmediaagent']:
 						if Prefs['assetslocation'] == 'local':
 							Log('Looking for season assets for %s season %s.', metadata.title, season_num)
-							try: self.AssetsLocal(metadata.seasons[season_num], [path, seasonPath], 'season')
+							try: self.AssetsLocal(metadata.seasons[season_num], path, 'season', seasonPath=seasonPath)
 							except Exception, e: Log("Error finding season assets for %s season %s: %s", metadata.title, season_num, str(e))
 						else:
 							Log('Looking for season assets for %s season %s from url', metadata.title, season_num)
@@ -1051,7 +1063,7 @@ class xbmcnfotv(Agent.TV_Shows):
 											path = os.path.dirname(episodeMedia.parts[0].file)
 											if Prefs['assetslocation'] == 'local':
 												Log('Looking for episode assets %s for %s season %s.', ep_num, metadata.title, season_num)
-												try: self.AssetsLocal(episode, [path], 'episode', episodeMedia.parts, multEpisode)
+												try: self.AssetsLocal(episode, path, 'episode', episodeMedia.parts, multEpisode)
 												except Exception, e: Log('Error finding episode assets %s for %s season %s: %s', ep_num, metadata.title, season_num,str(e))
 											else:
 												Log('Looking for episode assets for %s season %s from url', metadata.title, season_num)
