@@ -111,7 +111,7 @@ class xbmcnfotv(Agent.TV_Shows):
 	# @param parts Parts of multi-episode.
 	# @return void
 
-	def AssetsLocal(self, metadata, mainPath, type, parts=[], multEpisode=False, seasonPath=None):
+	def AssetsLocal(self, metadata, mainPath, type, parts=[], multEpisode=False, seasonPath=None, postersFromNfo=[]):
 		pathFiles = {}
 		audioExts = ['mp3', 'm4a']
 		imageExts = ['jpg', 'png', 'jpeg', 'tbn']
@@ -160,6 +160,23 @@ class xbmcnfotv(Agent.TV_Shows):
 			validKeys = []
 			sortIndex = 1
 			filePathKeys = sorted(pathFiles.keys(), key = lambda x: os.path.splitext(x)[0])
+			
+			if mediaList is metadata.thumbs:
+				# posters from nfo
+				for poster in sorted(postersFromNfo, key = lambda x: os.path.splitext(os.path.basename(x))[0]):
+					if multEpisode and ("-E" in filePath): continue
+					
+					data = Core.storage.load(poster)
+					mediaHash = os.path.basename(filePath) + hashlib.md5(data).hexdigest()
+					
+					validKeys.append(mediaHash)
+					if mediaHash not in mediaList:
+						mediaList[mediaHash] = Proxy.Media(data, sort_order = sortIndex)
+						Log('Found season poster image at ' + filePath)
+					else:
+						Log('Skipping file %s file because it already exists.', filePath)
+					sortIndex += 1
+			
 			for filePath in filePathKeys:
 				for ext in exts:
 					if re.match('%s.%s' % (structure, ext), filePath, re.IGNORECASE):
@@ -1061,9 +1078,21 @@ class xbmcnfotv(Agent.TV_Shows):
 
 											episodeMedia = media.seasons[season_num].episodes[ep_num].items[0]
 											path = os.path.dirname(episodeMedia.parts[0].file)
+											
 											if Prefs['assetslocation'] == 'local':
+
+												# art.poster field
+												postersFromNfo = []
+												try:
+													for n, poster in enumerate(nfoXML.xpath('art')[0].xpath('poster')):
+														p = poster.text.encode('utf-8')
+														if p and os.path.isfile(p):
+															postersFromNfo.append(p)
+												except:
+													pass
+
 												Log('Looking for episode assets %s for %s season %s.', ep_num, metadata.title, season_num)
-												try: self.AssetsLocal(episode, path, 'episode', episodeMedia.parts, multEpisode)
+												try: self.AssetsLocal(episode, path, 'episode', episodeMedia.parts, multEpisode, postersFromNfo=postersFromNfo)
 												except Exception, e: Log('Error finding episode assets %s for %s season %s: %s', ep_num, metadata.title, season_num,str(e))
 											else:
 												Log('Looking for episode assets for %s season %s from url', metadata.title, season_num)
