@@ -1,3 +1,4 @@
+![Code QL](https://github.com/Squazz/XBMCnfoTVImporter.bundle/actions/workflows/codeql.yml/badge.svg)
 XBMCnfoTVImporter.bundle-for-Plex
 =================================
 ### Installation:
