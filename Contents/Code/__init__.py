@@ -656,7 +656,7 @@ class xbmcnfotv(Agent.TV_Shows):
 							newrole.role = role
 						rroles.append (newrole.role)
 					except:
-						newrole.role = 'Unknown Role ' + str(n)
+						#newrole.role = 'Unknown Role ' + str(n) #this is not needed, and doesn't provide usefull information in Plex
 						pass
 					newrole.photo = ''
 					athumbloc = Prefs['athumblocation']
